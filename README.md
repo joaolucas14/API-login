@@ -1,79 +1,215 @@
-![Integrando seu projeto React com APIs](thumbnail.png)
+API de Gerenciamento de Livros e Usuários
+Esta API permite o gerenciamento de usuários e livros com as operações CRUD (Criar, Ler, Atualizar, Excluir). As funcionalidades incluem o registro de novos usuários, login, e consulta de livros lançados e mais vendidos.
 
-# AluraBooks
+Índice
+Tecnologias
+Instalação
+Endpoints
+Usuários
+Livros
+Exemplo de Requisições
+Estrutura do Projeto
+Contribuições
+Licença
+Tecnologias
+Node.js: Ambiente de execução para JavaScript no servidor.
+Express.js: Framework para criação da API RESTful.
+bcryptjs: Biblioteca para criptografia de senhas.
+UUID: Biblioteca para geração de identificadores únicos.
+Instalação
+Clone o repositório:
 
-O AluraBooks é uma loja virtual que vende livros da Casa do Código. 
-É um MVP que tá só começando e ainda tem muitas funcionalidades novas para serem desenvolvidas.
+bash
+Copiar
+Editar
+git clone https://github.com/seuusuario/seu-repositorio.git
+cd seu-repositorio
+Instale as dependências:
 
-# JSONServer + JWT Auth
+bash
+Copiar
+Editar
+npm install
+Execute o servidor:
 
-Essa é ma API Rest mockada, utilizando json-server e JWT.
+bash
+Copiar
+Editar
+npm start
+O servidor estará rodando na porta 3000 por padrão.
 
-## 🛠️ Instalação
+Endpoints
+Usuários
+POST /public/registrar
+Cria um novo usuário.
 
-```bash
-$ npm install
-$ npm run start-auth
-```
-## 🛠️ Como se registrar?
+Requisição:
 
-Você pode fazer isso efetuando uma requisição post para:
-
-```
-POST http://localhost:8000/public/registrar
-```
-
-Com os seguintes dados:
-
-
-```
+Corpo (JSON):
+json
+Copiar
+Editar
 {
-    "nome": "vinicios neves",
-    "email": "vinicios@alura.com.br",
-    "senha": "123456",
-    "endereco": "Rua Vergueiro, 3185",
-    "complemento": "Vila Mariana",
-    "cep": "04101-300"
+"email": "novoemail@example.com",
+"senha": "123456",
+"nome": "Novo Usuário",
+"endereco": "Rua Exemplo, 123",
+"complemento": "Apto 2",
+"cep": "12345-678"
 }
-```
+Resposta:
 
-Repare que o e-mail é um campo único e usuários com e-mails duplicados não serão persistidos.
-
-## 🛠️ Como fazer login?
-
-Você pode fazer isso efetuando uma requisição post para:
-
-```
-POST http://localhost:8000/public/login
-```
-
-Com os seguintes dados:
-
-
-```
+Código de status: 201 Created
+Corpo (JSON):
+json
+Copiar
+Editar
 {
-  "email": "vinicios@alura.com.br",
-  "senha":"123456"
+"mensagem": "Usuário criado com sucesso"
 }
-```
+POST /public/login
+Realiza login de um usuário.
 
-Você vai receber um token no seguinte formato:
+Requisição:
 
-```
+Corpo (JSON):
+json
+Copiar
+Editar
 {
-   "access_token": "<ACCESS_TOKEN>",
-   "user": { ... dados do usuário ... }
+"email": "usuario@example.com",
+"senha": "123456"
 }
-```
+Resposta:
 
-## Autenticar próximas requests?
+Código de status: 200 OK
+Corpo (JSON):
+json
+Copiar
+Editar
+{
+"mensagem": "Login realizado com sucesso",
+"token": "JWT_Token_Aqui"
+}
+GET /public/me
+Retorna informações do usuário autenticado.
 
-E então, adicionar este mesmo token ao header das próximas requisições:
+Requisição:
+Cabeçalhos:
+Authorization: Bearer <JWT_Token_Aqui>
+Resposta:
+Código de status: 200 OK
+Corpo (JSON):
+json
+Copiar
+Editar
+{
+"email": "usuario@example.com",
+"nome": "Nome do Usuário",
+"endereco": "Rua Exemplo, 123",
+"cep": "12345-678"
+}
+Livros
+GET /public/lancamentos
+Retorna uma lista de livros lançados.
 
-```
-Authorization: Bearer <ACCESS_TOKEN>
-```
+Resposta:
+Código de status: 200 OK
+Corpo (JSON):
+json
+Copiar
+Editar
+[
+{
+"id": "uuid-do-livro",
+"titulo": "Título do Livro",
+"autor": "Autor do Livro",
+"dataLancamento": "2025-01-01"
+},
+...
+]
+GET /public/mais-vendidos
+Retorna uma lista de livros mais vendidos.
 
-## 📚 Mais informações do curso
+Resposta:
+Código de status: 200 OK
+Corpo (JSON):
+json
+Copiar
+Editar
+[
+{
+"id": "uuid-do-livro",
+"titulo": "Título do Livro",
+"autor": "Autor do Livro",
+"quantidadeVendas": 1500
+},
+...
+]
+Exemplo de Requisições
+Criar Usuário
+bash
+Copiar
+Editar
+curl -X POST http://localhost:3000/public/registrar \
+-H "Content-Type: application/json" \
+-d '{
+"email": "novoemail@example.com",
+"senha": "123456",
+"nome": "Novo Usuário",
+"endereco": "Rua Exemplo, 123",
+"complemento": "Apto 2",
+"cep": "12345-678"
+}'
+Login de Usuário
+bash
+Copiar
+Editar
+curl -X POST http://localhost:3000/public/login \
+-H "Content-Type: application/json" \
+-d '{
+"email": "usuario@example.com",
+"senha": "123456"
+}'
+Consultar Livros Lançados
+bash
+Copiar
+Editar
+curl -X GET http://localhost:3000/public/lancamentos
+Consultar Livros Mais Vendidos
+bash
+Copiar
+Editar
+curl -X GET http://localhost:3000/public/mais-vendidos
+Estrutura do Projeto
+bash
+Copiar
+Editar
+/src
+/controllers
+usuarioController.js
+livroController.js
+/models
+usuarioModel.js
+livroModel.js
+/routes
+usuarioRoutes.js
+livroRoutes.js
+/middleware
+authMiddleware.js
+/utils
+jwtUtils.js
+/database
+database.json
+/server.js
+/package.json
+Contribuições
+Sinta-se à vontade para fazer contribuições! Para isso:
 
-O AluraBooks é o projeto utilizado durante toda a formação, e essa API será utilizada em vários cursos diferentes :)
+Faça o fork do repositório.
+Crie uma branch para a sua feature (git checkout -b feature/nome-da-feature).
+Commit suas alterações (git commit -am 'Adiciona nova feature').
+Envie para a branch (git push origin feature/nome-da-feature).
+Abra um pull request.
+Licença
+Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para mais detalhes.
