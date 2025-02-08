@@ -5,6 +5,11 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 // Conexão com o MongoDB Atlas
+server.use(
+  cors({
+    origin: "https://pokedex-ten-theta-43.vercel.app/", // URL do seu front-end
+  })
+);
 const mongoURI =
   process.env.MONGO_URI ||
   "mongodb+srv://joaolucans:<240466jl>@cluster0.n6ejc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
