@@ -1,1 +1,34 @@
-{"usuarios":[{"id":1,"email":"jl@gmail.br","senha":"123456","nome":"Joao Lucas","endereco":"Rua A","complemento":"Vila dev","cep":"00000-000"}]}
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "username": "João",
+      "senha": "123",
+      "favoritos": [
+        1,
+        11,
+        9,
+        10,
+        12,
+        4,
+        212,
+        3,
+        129
+      ]
+    },
+    {
+      "id": 2,
+      "username": "Lucas",
+      "senha": "123",
+      "favoritos": [
+        3
+      ]
+    },
+    {
+      "id": 3,
+      "username": "João lucas",
+      "senha": "123",
+      "favoritos": []
+    }
+  ]
+}
