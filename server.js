@@ -1,38 +1,17 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
-const cors = require("cors");
+import fs from "fs";
+import jwt from "jsonwebtoken";
+import bodyParser from "body-parser";
+import jsonServer from "json-server";
 
-// Conexão com o MongoDB Atlas
-server.use(
-  cors({
-    origin: "https://pokedex-ten-theta-43.vercel.app/", // URL do seu front-end
-  })
-);
-const mongoURI =
-  process.env.MONGO_URI ||
-  "mongodb+srv://joaolucans:<240466jl>@cluster0.n6ejc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-mongoose
-  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("Conectado ao MongoDB"))
-  .catch((err) => console.error("Erro de conexão:", err));
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Modelo de Usuário
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  senha: { type: String, required: true },
-  favoritos: { type: [Number], default: [] },
-});
-
-const User = mongoose.model("User", userSchema);
-
+// Configuração do JSON Server
+const server = jsonServer.create();
+const router = jsonServer.router("./database.json");
 const SECRET_KEY = "123456789";
+let userdb = JSON.parse(fs.readFileSync("./usuarios.json", "UTF-8"));
+
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(bodyParser.json());
+server.use(jsonServer.defaults());
 
 // Função para criar um token JWT
 function createToken(payload, expiresIn = "12h") {
@@ -48,49 +27,64 @@ function verifyToken(token) {
   }
 }
 
+// Verifica se o usuário existe no banco
+function usuarioExiste(username, senha) {
+  return userdb.usuarios.some(
+    (user) => user.username === username && user.senha === senha
+  );
+}
+
 // ✅ Rota para registrar um novo usuário
-app.post("/public/registrar", async (req, res) => {
+server.post("/public/registrar", (req, res) => {
   const { username, senha } = req.body;
 
-  const userExists = await User.findOne({ username });
-  if (userExists) {
+  if (usuarioExiste(username, senha)) {
     return res.status(400).json({ message: "Usuário já existe!" });
   }
 
-  const novoUsuario = new User({
+  const novoUsuario = {
+    id:
+      userdb.usuarios.length > 0
+        ? userdb.usuarios[userdb.usuarios.length - 1].id + 1
+        : 1,
     username,
     senha,
     favoritos: [],
-  });
+  };
 
-  await novoUsuario.save();
+  userdb.usuarios.push(novoUsuario);
+  fs.writeFileSync("./usuarios.json", JSON.stringify(userdb, null, 2));
 
-  const access_token = createToken({ id: novoUsuario._id, username });
+  const access_token = createToken({ id: novoUsuario.id, username });
 
   res
     .status(201)
-    .json({ access_token, user: { id: novoUsuario._id, username } });
+    .json({ access_token, user: { id: novoUsuario.id, username } });
 });
 
 // ✅ Rota para login do usuário
-app.post("/public/login", async (req, res) => {
+server.post("/public/login", (req, res) => {
   const { username, senha } = req.body;
 
-  const user = await User.findOne({ username, senha });
+  const user = userdb.usuarios.find(
+    (user) => user.username === username && user.senha === senha
+  );
+
   if (!user) {
     return res.status(401).json({ message: "Usuário ou senha incorretos!" });
   }
 
-  const access_token = createToken({ id: user._id, username });
+  const access_token = createToken({ id: user.id, username });
 
+  // Retorna os dados do usuário, sem a senha
   res.status(200).json({
     access_token,
-    user: { id: user._id, username, favoritos: user.favoritos },
+    user: { id: user.id, username, favoritos: user.favoritos },
   });
 });
 
 // ✅ Middleware para proteger rotas privadas
-app.use((req, res, next) => {
+server.use((req, res, next) => {
   if (req.path.startsWith("/user/")) {
     const token = req.headers.authorization?.split(" ")[1];
 
@@ -110,8 +104,8 @@ app.use((req, res, next) => {
 });
 
 // ✅ Rota para obter os dados do usuário autenticado
-app.get("/user/me", async (req, res) => {
-  const user = await User.findById(req.user.id);
+server.get("/user/me", (req, res) => {
+  const user = userdb.usuarios.find((u) => u.id === req.user.id);
 
   if (!user) {
     return res.status(404).json({ message: "Usuário não encontrado!" });
@@ -119,51 +113,56 @@ app.get("/user/me", async (req, res) => {
 
   res
     .status(200)
-    .json({ id: user._id, username: user.username, favoritos: user.favoritos });
+    .json({ id: user.id, username: user.username, favoritos: user.favoritos });
 });
 
 // ✅ Rota para adicionar um favorito
-app.post("/user/favoritos", async (req, res) => {
-  const { idFavorito } = req.body;
+server.post("/user/favoritos", (req, res) => {
+  const { idFavorito } = req.body; // ID do item a ser favoritado
 
   if (!idFavorito) {
     return res.status(400).json({ message: "ID do favorito é obrigatório!" });
   }
 
-  const user = await User.findById(req.user.id);
+  const userIndex = userdb.usuarios.findIndex((u) => u.id === req.user.id);
 
-  if (!user) {
+  if (userIndex === -1) {
     return res.status(404).json({ message: "Usuário não encontrado!" });
   }
 
   // Evita duplicatas
-  if (!user.favoritos.includes(idFavorito)) {
-    user.favoritos.push(idFavorito);
-    await user.save();
+  if (!userdb.usuarios[userIndex].favoritos.includes(idFavorito)) {
+    userdb.usuarios[userIndex].favoritos.push(idFavorito);
+    fs.writeFileSync("./usuarios.json", JSON.stringify(userdb, null, 2));
   }
 
-  res.status(200).json({ favoritos: user.favoritos });
+  res.status(200).json({ favoritos: userdb.usuarios[userIndex].favoritos });
 });
 
 // ✅ Rota para remover um item dos favoritos
-app.delete("/user/favoritos/:id", async (req, res) => {
-  const idFavorito = parseInt(req.params.id, 10);
+server.delete("/user/favoritos/:id", (req, res) => {
+  const idFavorito = parseInt(req.params.id, 10); // ID do item a ser removido
 
-  const user = await User.findById(req.user.id);
+  const userIndex = userdb.usuarios.findIndex((u) => u.id === req.user.id);
 
-  if (!user) {
+  if (userIndex === -1) {
     return res.status(404).json({ message: "Usuário não encontrado!" });
   }
 
   // Remove o item da lista de favoritos
-  user.favoritos = user.favoritos.filter((fav) => fav !== idFavorito);
-  await user.save();
+  userdb.usuarios[userIndex].favoritos = userdb.usuarios[
+    userIndex
+  ].favoritos.filter((fav) => fav !== idFavorito);
 
-  res.status(200).json({ favoritos: user.favoritos });
+  fs.writeFileSync("./usuarios.json", JSON.stringify(userdb, null, 2));
+
+  res.status(200).json({ favoritos: userdb.usuarios[userIndex].favoritos });
 });
 
-// Rodar o servidor na porta dinâmica do Railway
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`);
+// Adiciona o roteador do jsonServer para as rotas adicionais (como /posts, /comments, etc.)
+server.use(router);
+
+// Rodar a API
+server.listen(8000, () => {
+  console.log("API disponível em http://localhost:8000");
 });
