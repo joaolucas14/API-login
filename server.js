@@ -2,6 +2,7 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import bodyParser from "body-parser";
 import jsonServer from "json-server";
+import cors from "cors";
 
 // Configuração do JSON Server
 const server = jsonServer.create();
@@ -12,6 +13,11 @@ let userdb = JSON.parse(fs.readFileSync("./usuarios.json", "UTF-8"));
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
 server.use(jsonServer.defaults());
+server.use(
+  cors({
+    origin: "*", // 🔹 Permite qualquer origem (para produção, substitua pelo domínio específico)
+  })
+);
 
 // Função para criar um token JWT
 function createToken(payload, expiresIn = "12h") {
