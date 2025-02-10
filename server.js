@@ -16,6 +16,8 @@ server.use(jsonServer.defaults());
 server.use(
   cors({
     origin: "*", // 🔹 Permite qualquer origem (para produção, substitua pelo domínio específico)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
