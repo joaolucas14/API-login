@@ -10,30 +10,25 @@ const router = jsonServer.router("./database.json");
 const SECRET_KEY = "123456789";
 let userdb = JSON.parse(fs.readFileSync("./usuarios.json", "UTF-8"));
 
-server.use(bodyParser.urlencoded({ extended: true }));
-server.use(bodyParser.json());
-server.use(jsonServer.defaults());
+// ✅ Middleware de CORS (deixe APENAS este, removi a duplicação)
 server.use(
   cors({
-    origin: "*", // 🔹 Permite qualquer origem (para produção, substitua pelo domínio específico)
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "*", // 🔹 Permite qualquer origem (para produção, use um domínio específico)
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-server.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Permite qualquer origem
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+// ✅ Middleware padrão do JSON Server
+server.use(jsonServer.defaults());
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204); // Responde imediatamente a requisições OPTIONS (preflight)
-  }
+// ✅ Middleware para permitir JSON no body das requisições
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(bodyParser.json());
 
-  next();
+// ✅ Middleware para lidar com requisições OPTIONS corretamente
+server.options("*", (req, res) => {
+  res.sendStatus(204);
 });
 
 // Função para criar um token JWT
@@ -99,11 +94,12 @@ server.post("/public/login", (req, res) => {
 
   const access_token = createToken({ id: user.id, username });
 
-  // Retorna os dados do usuário, sem a senha
-  res.status(200).json({
-    access_token,
-    user: { id: user.id, username, favoritos: user.favoritos },
-  });
+  res
+    .status(200)
+    .json({
+      access_token,
+      user: { id: user.id, username, favoritos: user.favoritos },
+    });
 });
 
 // ✅ Middleware para proteger rotas privadas
@@ -141,7 +137,7 @@ server.get("/user/me", (req, res) => {
 
 // ✅ Rota para adicionar um favorito
 server.post("/user/favoritos", (req, res) => {
-  const { idFavorito } = req.body; // ID do item a ser favoritado
+  const { idFavorito } = req.body;
 
   if (!idFavorito) {
     return res.status(400).json({ message: "ID do favorito é obrigatório!" });
@@ -153,7 +149,6 @@ server.post("/user/favoritos", (req, res) => {
     return res.status(404).json({ message: "Usuário não encontrado!" });
   }
 
-  // Evita duplicatas
   if (!userdb.usuarios[userIndex].favoritos.includes(idFavorito)) {
     userdb.usuarios[userIndex].favoritos.push(idFavorito);
     fs.writeFileSync("./usuarios.json", JSON.stringify(userdb, null, 2));
@@ -164,7 +159,7 @@ server.post("/user/favoritos", (req, res) => {
 
 // ✅ Rota para remover um item dos favoritos
 server.delete("/user/favoritos/:id", (req, res) => {
-  const idFavorito = parseInt(req.params.id, 10); // ID do item a ser removido
+  const idFavorito = parseInt(req.params.id, 10);
 
   const userIndex = userdb.usuarios.findIndex((u) => u.id === req.user.id);
 
@@ -172,7 +167,6 @@ server.delete("/user/favoritos/:id", (req, res) => {
     return res.status(404).json({ message: "Usuário não encontrado!" });
   }
 
-  // Remove o item da lista de favoritos
   userdb.usuarios[userIndex].favoritos = userdb.usuarios[
     userIndex
   ].favoritos.filter((fav) => fav !== idFavorito);
@@ -182,10 +176,11 @@ server.delete("/user/favoritos/:id", (req, res) => {
   res.status(200).json({ favoritos: userdb.usuarios[userIndex].favoritos });
 });
 
-// Adiciona o roteador do jsonServer para as rotas adicionais (como /posts, /comments, etc.)
+// ✅ Adiciona o roteador do jsonServer para as rotas adicionais
 server.use(router);
 
-// Rodar a API
-server.listen(8000, () => {
-  console.log("API disponível em http://localhost:8000");
+// ✅ Inicia o servidor
+const PORT = 8000;
+server.listen(PORT, () => {
+  console.log(`API rodando em http://localhost:${PORT}`);
 });
