@@ -21,6 +21,21 @@ server.use(
   })
 );
 
+server.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Permite qualquer origem
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204); // Responde imediatamente a requisições OPTIONS (preflight)
+  }
+
+  next();
+});
+
 // Função para criar um token JWT
 function createToken(payload, expiresIn = "12h") {
   return jwt.sign(payload, SECRET_KEY, { expiresIn });
