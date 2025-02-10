@@ -1,9 +1,13 @@
 {
-    "version": 2,
-    "builds": [
+    "headers": [
       {
-        "src": "api/server.js",
-        "use": "@vercel/node"
+        "source": "/(.*)",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "https://pokedex-ten-theta-43.vercel.app" },
+          { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+          { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        ]
       }
     ]
   }
+  
