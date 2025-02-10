@@ -1,8 +1,8 @@
-import fs from "fs";
-import jwt from "jsonwebtoken";
-import bodyParser from "body-parser";
-import jsonServer from "json-server";
-import cors from "cors";
+const fs = require("fs");
+const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const jsonServer = require("json-server");
+const cors = require("cors");
 
 // Configuração do JSON Server
 const server = jsonServer.create();
@@ -94,12 +94,10 @@ server.post("/public/login", (req, res) => {
 
   const access_token = createToken({ id: user.id, username });
 
-  res
-    .status(200)
-    .json({
-      access_token,
-      user: { id: user.id, username, favoritos: user.favoritos },
-    });
+  res.status(200).json({
+    access_token,
+    user: { id: user.id, username, favoritos: user.favoritos },
+  });
 });
 
 // ✅ Middleware para proteger rotas privadas
